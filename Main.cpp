@@ -8,6 +8,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+using namespace glm;
+
 struct Ray
 {
     glm::vec3 origin; // Ray origin
@@ -64,6 +66,54 @@ struct Sphere : public SceneObject
         // float t = sphere->Intersect(ray, point, normal);
         //
         // (At this point, point and normal will now contain the intersection point and intersection normal)
+
+        vec3 m = incomingRay.origin - center;
+        float b = dot(m, incomingRay.direction);
+        float c = dot(m, m) - (radius * radius);
+
+        if ((b * b) - c < 0)
+        {
+            return -1.0f;
+        }
+        else if ((b * b) - c == 0)
+        {
+            float t = -b;
+            outIntersectionPoint = incomingRay.origin + (t * incomingRay.direction);
+            //TODO: Get outIntersectionNormal
+            return t;
+        }
+        else
+        {
+            float t1 = -b + sqrt((b * b) - c);
+            float t2 = -b - sqrt((b * b) - c);
+
+            if (t1 < 0 && t2 < 0) //both negative
+            {
+                return -1.0f;
+            }
+            else
+            {
+                float t;
+                if (t1 >= 0 && t2 < 0)
+                {
+                    t = t1;
+                }
+                else if (t1 < 0 && t2 >= 0)
+                {
+                    t = t2;
+                }
+                else
+                {
+                    t = min(t1, t2);
+                }
+
+                outIntersectionPoint = incomingRay.origin + (t * incomingRay.direction);
+                //TODO: Get outIntersectionNormal
+
+                return t;
+            }
+        }
+
 
         return s;
     }
@@ -188,8 +238,25 @@ struct Image
 Ray GetRayThruPixel(const Camera &camera, const int& pixelX, const int& pixelY)
 {
     Ray ray;
-    ray.origin = glm::vec3(0.0f); 
-    ray.direction = glm::vec3(0.0f);
+    ray.origin = camera.position; 
+
+    float aspect = camera.imageWidth / camera.imageHeight;
+    float hViewport = 2 * camera.focalLength * tan(camera.fovY / 2);
+    float wViewport = aspect / hViewport;
+
+    vec3 lookDirection = normalize(camera.lookTarget - camera.position);
+
+    vec3 u = cross(lookDirection, camera.globalUp) / length(cross(lookDirection, camera.globalUp));
+    vec3 v = cross(u, lookDirection) / length(cross(u, lookDirection));
+
+    vec3 L = camera.position + (lookDirection * camera.focalLength) - (u * (wViewport / 2)) - (v * (hViewport / 2));
+
+    float s = ((pixelX + 0.5f) * wViewport) / camera.imageWidth;
+    float t = ((pixelY + 0.5f) * hViewport) / camera.imageHeight;
+
+    vec3 P = L + (u * s) + (v * t);
+
+    ray.direction = (P - ray.origin)/length(P - ray.origin);
 
     return ray;
 }
@@ -235,9 +302,24 @@ int main()
 {
     Scene scene;
     Camera camera;
+
+    //#2
     camera.imageWidth = 640;
     camera.imageHeight = 480;
+    camera.position = vec3(0.0f, 0.0f, 3.0f);
+    camera.lookTarget = vec3(0.0f, 0.0f, 0.0f);
+    camera.globalUp = vec3(0.0f, 1.0f, 0.0f);
+    camera.fovY = 45.0f;
+    camera.focalLength = 1.0f;
+
     int maxDepth = 1;
+
+    //#3
+    Sphere* sphere = new Sphere();
+    sphere->center = vec3(0.0f, 0.0f, 0.0f);
+    sphere->radius = 1.0f;
+    sphere->material.diffuse = vec3(1.0f, 0.0f, 0.0f);
+    scene.objects.push_back(sphere);
 
     Image image(camera.imageWidth, camera.imageHeight);
     for (int y = 0; y < image.height; ++y)
