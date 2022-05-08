@@ -56,8 +56,8 @@ struct Sphere : public SceneObject
      */
     virtual float Intersect(const Ray& incomingRay, glm::vec3& outIntersectionPoint, glm::vec3& outIntersectionNormal)
     {
-        float s = 0.0f;
-
+        //#5
+        
         // In case there is an intersection, place the intersection point and intersection normal
         // that you calculated to the outIntersectionPoint and outIntersectionNormal variables.
         //
@@ -82,8 +82,7 @@ struct Sphere : public SceneObject
         {
             float t = -b;
             outIntersectionPoint = incomingRay.origin + (t * incomingRay.direction);
-            outIntersectionNormal = outIntersectionPoint - center;
-            //TODO: Get outIntersectionNormal
+            outIntersectionNormal = normalize(outIntersectionPoint - center);
             return t;
         }
         else
@@ -98,29 +97,25 @@ struct Sphere : public SceneObject
             else
             {
                 float t;
-                if (t1 >= 0 && t2 < 0)
+                if (t1 >= 0 && t2 < 0) //t1 is positive
                 {
                     t = t1;
                 }
-                else if (t1 < 0 && t2 >= 0)
+                else if (t1 < 0 && t2 >= 0) //t2 is positive
                 {
                     t = t2;
                 }
-                else
+                else //both are positive
                 {
                     t = min(t1, t2);
                 }
 
                 outIntersectionPoint = incomingRay.origin + (t * incomingRay.direction);
-                outIntersectionNormal = outIntersectionPoint - center;
-                //TODO: Get outIntersectionNormal
+                outIntersectionNormal = normalize(outIntersectionPoint - center);
 
                 return t;
             }
         }
-
-
-        return s;
     }
 };
 
@@ -140,11 +135,39 @@ struct Triangle : public SceneObject
      */
     virtual float Intersect(const Ray& incomingRay, glm::vec3& outIntersectionPoint, glm::vec3& outIntersectionNormal)
     {
-        float s = 0.0f;
+        //#9
 
         // The same idea for the outIntersectionPoint and outIntersectionNormal applies here
-
-	    return s;
+        vec3 n = cross(B - A, C - A);
+        float f = dot(-incomingRay.direction, n);
+        vec3 e = cross(-incomingRay.direction, incomingRay.origin - A);
+        
+        if (f <= 0)
+        {
+            return -1.0f;
+        }
+        
+        float t = dot((incomingRay.origin - A), n) / f;
+        float u = dot(C - A, e) / f;
+        float v = dot(-(B - A), e) / f;
+                
+        if (t > 0)
+        {
+            if ((u + v <= 1) && (u >= 0) && (v >= 0))
+            {
+                outIntersectionPoint = incomingRay.origin + (t * incomingRay.direction);
+                outIntersectionNormal = cross(B - A, C -A);
+                return t;
+            }
+            else
+            {
+                return -1.0f;
+            }
+        }
+        else
+        {
+            return -1.0f;
+        }
     }
 };
 
@@ -242,12 +265,13 @@ struct Image
  */
 Ray GetRayThruPixel(const Camera &camera, const int& pixelX, const int& pixelY)
 {
+    //#4
     Ray ray;
     ray.origin = camera.position; 
 
-    float aspect = camera.imageWidth / camera.imageHeight;
-    float hViewport = 2 * camera.focalLength * tan(camera.fovY / 2);
-    float wViewport = aspect / hViewport;
+    float aspect = (float) camera.imageWidth / camera.imageHeight;
+    float hViewport = 2.0f * camera.focalLength * tan(radians(camera.fovY / 2));
+    float wViewport = aspect * hViewport;
 
     vec3 lookDirection = normalize(camera.lookTarget - camera.position);
 
@@ -274,14 +298,37 @@ Ray GetRayThruPixel(const Camera &camera, const int& pixelX, const int& pixelY)
  */
 IntersectionInfo Raycast(const Ray& ray, const Scene &scene)
 {
+    //#6
     IntersectionInfo ret;
     ret.incomingRay = ray;
+    ret.obj = nullptr;
 
-    // Fields that need to be populated:
-    ret.intersectionPoint = glm::vec3(0.0f); // Intersection point
-    ret.intersectionNormal = glm::vec3(0.0f); // Intersection normal
-    ret.t = 0.0f; // Distance from ray origin to intersection point
-    ret.obj = nullptr; // First object hit by the ray. Set to nullptr if the ray does not hit anything
+    //// Fields that need to be populated:
+    //ret.intersectionPoint = glm::vec3(0.0f); // Intersection point
+    //ret.intersectionNormal = glm::vec3(0.0f); // Intersection normal
+    //ret.t = 0.0f; // Distance from ray origin to intersection point
+    //ret.obj = nullptr; // First object hit by the ray. Set to nullptr if the ray does not hit anything
+
+    float dist = -1.0f;
+    for (int i = 0; i < scene.objects.size(); i++)
+    {
+        vec3 point, normal;
+        float t = scene.objects[i]->Intersect(ray, point, normal);
+        
+        float tempDist = length(point - ray.origin);
+
+        if ((tempDist < dist) || (dist < 0))
+        {            
+            if (t >= 0)
+            {
+                dist = tempDist;
+                ret.intersectionPoint = point;
+                ret.intersectionNormal = normal;
+                ret.t = t;
+                ret.obj = scene.objects[i];
+            }
+        }
+    }
 
     return ret;
 }
@@ -296,9 +343,22 @@ IntersectionInfo Raycast(const Ray& ray, const Scene &scene)
  */
 glm::vec3 RayTrace(const Ray& ray, const Scene& scene, const Camera& camera, int maxDepth = 1)
 {
-    glm::vec3 color(0.0f);
-    return color;
+    //#7
+    glm::vec3 bgColor(0.0f);
+
+    IntersectionInfo object = Raycast(ray, scene);
+    
+    if (object.obj != nullptr)
+    {
+        return object.obj->material.diffuse;
+    }
+    else
+    {
+        return bgColor;
+    }
 }
+
+//#8 run app
 
 /**
  * Main function
@@ -325,6 +385,13 @@ int main()
     sphere->radius = 1.0f;
     sphere->material.diffuse = vec3(1.0f, 0.0f, 0.0f);
     scene.objects.push_back(sphere);
+
+    //#10
+    Triangle* triangle = new Triangle();
+    triangle->A = vec3(-1.0f, -1.0f, -1.0f);
+    triangle->B = vec3(0.0f, 1.0f, -1.0f);
+    triangle->C = vec3(1.0f, -1.0f, -1.0f);
+    scene.objects.push_back(triangle);
 
     Image image(camera.imageWidth, camera.imageHeight);
     for (int y = 0; y < image.height; ++y)
