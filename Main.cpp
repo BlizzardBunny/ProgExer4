@@ -79,6 +79,7 @@ struct Sphere : public SceneObject
         {
             float t = -b;
             outIntersectionPoint = incomingRay.origin + (t * incomingRay.direction);
+            outIntersectionNormal = outIntersectionPoint - center;
             //TODO: Get outIntersectionNormal
             return t;
         }
@@ -108,6 +109,7 @@ struct Sphere : public SceneObject
                 }
 
                 outIntersectionPoint = incomingRay.origin + (t * incomingRay.direction);
+                outIntersectionNormal = outIntersectionPoint - center;
                 //TODO: Get outIntersectionNormal
 
                 return t;
