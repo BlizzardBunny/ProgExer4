@@ -148,15 +148,15 @@ struct Triangle : public SceneObject
         }
         
         float t = dot((incomingRay.origin - A), n) / f;
-        float u = dot(C - A, e) / f;
+        float u = dot((C - A), e) / f;
         float v = dot(-(B - A), e) / f;
-                
+
         if (t > 0)
         {
             if ((u + v <= 1) && (u >= 0) && (v >= 0))
             {
                 outIntersectionPoint = incomingRay.origin + (t * incomingRay.direction);
-                outIntersectionNormal = cross(B - A, C -A);
+                outIntersectionNormal = normalize(cross(B - A, C - A));
                 return t;
             }
             else
@@ -168,6 +168,7 @@ struct Triangle : public SceneObject
         {
             return -1.0f;
         }
+        
     }
 };
 
@@ -377,7 +378,7 @@ int main()
     camera.fovY = 45.0f;
     camera.focalLength = 1.0f;
 
-    int maxDepth = 1;
+    int maxDepth = 10;
 
     //#3
     Sphere* sphere = new Sphere();
@@ -391,6 +392,7 @@ int main()
     triangle->A = vec3(-1.0f, -1.0f, -1.0f);
     triangle->B = vec3(0.0f, 1.0f, -1.0f);
     triangle->C = vec3(1.0f, -1.0f, -1.0f);
+    triangle->material.diffuse = vec3(1.0f, 0.0f, 0.0f);
     scene.objects.push_back(triangle);
 
     Image image(camera.imageWidth, camera.imageHeight);
@@ -404,7 +406,7 @@ int main()
             image.SetColor(x, y, color);
         }
 
-        std::cout << "Row: " << std::setfill(' ') << std::setw(4) << (y + 1) << " / " << std::setfill(' ') << std::setw(4) << image.height << "\r" << std::flush;
+        //std::cout << "Row: " << std::setfill(' ') << std::setw(4) << (y + 1) << " / " << std::setfill(' ') << std::setw(4) << image.height << "\r" << std::flush;
     }
     std::cout << std::endl;
     
