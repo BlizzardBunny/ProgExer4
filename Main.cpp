@@ -309,7 +309,6 @@ IntersectionInfo Raycast(const Ray& ray, const Scene &scene)
     //ret.intersectionNormal = glm::vec3(0.0f); // Intersection normal
     //ret.t = 0.0f; // Distance from ray origin to intersection point
     //ret.obj = nullptr; // First object hit by the ray. Set to nullptr if the ray does not hit anything
-
     float dist = -1.0f;
     for (int i = 0; i < scene.objects.size(); i++)
     {
@@ -389,10 +388,10 @@ int main()
 
     //#10
     Triangle* triangle = new Triangle();
-    triangle->A = vec3(-1.0f, -1.0f, -1.0f);
-    triangle->B = vec3(0.0f, 1.0f, -1.0f);
-    triangle->C = vec3(1.0f, -1.0f, -1.0f);
-    triangle->material.diffuse = vec3(1.0f, 0.0f, 0.0f);
+    triangle->A = vec3(2.0f, -2.0f, -2.0f);
+    triangle->B = vec3(0.0f, 2.0f, -2.0f);
+    triangle->C = vec3(-2.0f, -2.0f, -2.0f);
+    triangle->material.diffuse = vec3(0.0f, 1.0f, 0.0f);
     scene.objects.push_back(triangle);
 
     Image image(camera.imageWidth, camera.imageHeight);
@@ -406,7 +405,7 @@ int main()
             image.SetColor(x, y, color);
         }
 
-        //std::cout << "Row: " << std::setfill(' ') << std::setw(4) << (y + 1) << " / " << std::setfill(' ') << std::setw(4) << image.height << "\r" << std::flush;
+        std::cout << "Row: " << std::setfill(' ') << std::setw(4) << (y + 1) << " / " << std::setfill(' ') << std::setw(4) << image.height << "\r" << std::flush;
     }
     std::cout << std::endl;
     
