@@ -5,6 +5,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -210,7 +211,7 @@ struct IntersectionInfo
 struct Scene
 {
     std::vector<SceneObject*> objects; // List of all objects in the scene
-    std::vector<Light> lights; // List of all lights in the scene
+    std::vector<Light*> lights; // List of all lights in the scene
 };
 
 struct Image
@@ -366,8 +367,10 @@ glm::vec3 RayTrace(const Ray& ray, const Scene& scene, const Camera& camera, int
 int main()
 {
     Scene scene;
-    Camera camera;
+    Camera camera; 
+    int maxDepth;
 
+    /*
     //#2
     camera.imageWidth = 640;
     camera.imageHeight = 480;
@@ -376,8 +379,6 @@ int main()
     camera.globalUp = vec3(0.0f, 1.0f, 0.0f);
     camera.fovY = 45.0f;
     camera.focalLength = 1.0f;
-
-    int maxDepth = 10;
 
     //#3
     Sphere* sphere = new Sphere();
@@ -392,7 +393,137 @@ int main()
     triangle->B = vec3(0.0f, 2.0f, -2.0f);
     triangle->C = vec3(-2.0f, -2.0f, -2.0f);
     triangle->material.diffuse = vec3(0.0f, 1.0f, 0.0f);
-    scene.objects.push_back(triangle);
+    scene.objects.push_back(triangle);*/
+
+    //#11
+    std::string filename = "scene1a.test";
+    std::ifstream sceneTest;
+    sceneTest.open(filename.c_str()); 
+    if (!sceneTest) { // file couldn't be opened
+        std::cerr << "Error: file could not be opened" << std::endl;
+        exit(1);
+    }    
+    
+    std::vector<std::string> values;
+    std::string temp;
+    while (sceneTest >> temp)
+    {
+        values.push_back(temp);
+    }
+    
+    try
+    {
+        int i = -1;
+        camera.imageWidth = std::stoi(values[++i]);
+        camera.imageHeight = std::stoi(values[++i]);
+
+        camera.position.x = std::stof(values[++i]);
+        camera.position.y = std::stof(values[++i]);
+        camera.position.z = std::stof(values[++i]);
+
+        camera.lookTarget.x = std::stof(values[++i]);
+        camera.lookTarget.y = std::stof(values[++i]);
+        camera.lookTarget.z = std::stof(values[++i]);
+
+        camera.globalUp.x = std::stof(values[++i]);
+        camera.globalUp.y = std::stof(values[++i]);
+        camera.globalUp.z = std::stof(values[++i]);
+
+        camera.fovY = std::stof(values[++i]);
+        camera.focalLength = std::stof(values[++i]);
+
+        maxDepth = std::stoi(values[++i]);
+        int N = std::stoi(values[++i]);
+        for (int j = 0; j < N; j++)
+        {
+            std::string objectName = values[++i];
+
+            SceneObject* object = nullptr;
+            if (objectName == "sphere")
+            {
+                Sphere* sphere = new Sphere();
+
+                sphere->center.x = std::stof(values[++i]);
+                sphere->center.y = std::stof(values[++i]);
+                sphere->center.z = std::stof(values[++i]);
+
+                sphere->radius = std::stof(values[++i]);
+
+                object = sphere;
+            }
+            else if (objectName == "tri")
+            {
+                Triangle* triangle = new Triangle();
+
+                triangle->A.x = std::stof(values[++i]);
+                triangle->A.x = std::stof(values[++i]);
+                triangle->A.x = std::stof(values[++i]);
+
+                triangle->B.x = std::stof(values[++i]);
+                triangle->B.x = std::stof(values[++i]);
+                triangle->B.x = std::stof(values[++i]);
+
+                triangle->C.x = std::stof(values[++i]);
+                triangle->C.x = std::stof(values[++i]);
+                triangle->C.x = std::stof(values[++i]);
+
+                object = triangle;
+            }
+
+            if (object != nullptr)
+            {
+                object->material.ambient.r = std::stof(values[++i]);
+                object->material.ambient.g = std::stof(values[++i]);
+                object->material.ambient.b = std::stof(values[++i]);
+
+                object->material.diffuse.r = std::stof(values[++i]);
+                object->material.diffuse.g = std::stof(values[++i]);
+                object->material.diffuse.b = std::stof(values[++i]);
+
+                object->material.specular.r = std::stof(values[++i]);
+                object->material.specular.g = std::stof(values[++i]);
+                object->material.specular.b = std::stof(values[++i]);
+
+                object->material.shininess = std::stof(values[++i]);
+            }
+
+            scene.objects.push_back(object);
+        }
+
+        int L = std::stoi(values[++i]);
+        for (int j = 0; j < L; j++)
+        {
+            Light* light = new Light();
+
+            light->position.x = std::stof(values[++i]);
+            light->position.y = std::stof(values[++i]);
+            light->position.z = std::stof(values[++i]);
+
+            light->ambient.x = std::stof(values[++i]);
+            light->ambient.y = std::stof(values[++i]);
+            light->ambient.z = std::stof(values[++i]);
+
+            light->diffuse.x = std::stof(values[++i]);
+            light->diffuse.y = std::stof(values[++i]);
+            light->diffuse.z = std::stof(values[++i]);
+
+            light->specular.x = std::stof(values[++i]);
+            light->specular.y = std::stof(values[++i]);
+            light->specular.z = std::stof(values[++i]);
+
+            light->constant = std::stof(values[++i]);
+            light->linear = std::stof(values[++i]);
+            light->quadratic = std::stof(values[++i]);
+
+            scene.lights.push_back(light);
+        }        
+
+    }
+    catch (...)
+    {
+        std::cerr << "File not formatted properly" << std::endl;
+        exit(1);
+    }
 
     Image image(camera.imageWidth, camera.imageHeight);
     for (int y = 0; y < image.height; ++y)
