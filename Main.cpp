@@ -395,8 +395,11 @@ int main()
     triangle->material.diffuse = vec3(0.0f, 1.0f, 0.0f);
     scene.objects.push_back(triangle);*/
 
+
     //#11
-    std::string filename = "scene1a.test";
+    std::cout << "Enter file name: " << std::endl;
+    std::string filename;
+    std::cin >> filename;
     std::ifstream sceneTest;
     sceneTest.open(filename.c_str()); 
     if (!sceneTest) { // file couldn't be opened
@@ -456,16 +459,16 @@ int main()
                 Triangle* triangle = new Triangle();
 
                 triangle->A.x = std::stof(values[++i]);
-                triangle->A.x = std::stof(values[++i]);
-                triangle->A.x = std::stof(values[++i]);
+                triangle->A.y = std::stof(values[++i]);
+                triangle->A.z = std::stof(values[++i]);
 
                 triangle->B.x = std::stof(values[++i]);
-                triangle->B.x = std::stof(values[++i]);
-                triangle->B.x = std::stof(values[++i]);
+                triangle->B.y = std::stof(values[++i]);
+                triangle->B.z = std::stof(values[++i]);
 
                 triangle->C.x = std::stof(values[++i]);
-                triangle->C.x = std::stof(values[++i]);
-                triangle->C.x = std::stof(values[++i]);
+                triangle->C.y = std::stof(values[++i]);
+                triangle->C.z = std::stof(values[++i]);
 
                 object = triangle;
             }
