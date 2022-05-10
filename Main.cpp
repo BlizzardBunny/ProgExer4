@@ -347,9 +347,13 @@ glm::vec3 RayTrace(const Ray& ray, const Scene& scene, const Camera& camera, int
     glm::vec3 bgColor(0.0f);
 
     IntersectionInfo object = Raycast(ray, scene);
+
     
     if (object.obj != nullptr)
     {
+        //#13 & 14
+        glm::vec3 finalColor = ((scene.lights.ambient * scene.objects.ambient) + ((scene.lights.diffuse * scene.objects.diffuse) + (scene.lights.specular * scene.objects.specular));
+
         return object.obj->material.diffuse;
     }
     else
