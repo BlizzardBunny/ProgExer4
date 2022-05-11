@@ -353,9 +353,17 @@ glm::vec3 RayTrace(const Ray& ray, const Scene& scene, const Camera& camera, int
     if (object.obj != nullptr)
     {
         //#13 & 14
-        glm::vec3 finalColor = ((scene.lights.ambient * scene.objects.ambient) + ((scene.lights.diffuse * scene.objects.diffuse) + (scene.lights.specular * scene.objects.specular));
+        //glm::vec3 finalColor = ((scene.lights.ambient * scene.objects.ambient) + ((scene.lights.diffuse * scene.objects.diffuse) + (scene.lights.specular * scene.objects.specular));
 
-        return object.obj->material.diffuse;
+        glm::vec3 otherCompSum; //sum of diffuse and specular components
+        glm::vec3 ambientSum; //sum of ambient components
+        for (int i = 0; i < scene.lights.size(); i++)
+        {
+            ambientSum += scene.lights[i]->ambient;
+            //n = intersection normal; l = ray origin - intersection point
+        }
+
+        return bgColor;
     }
     else
     {
