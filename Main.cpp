@@ -345,7 +345,7 @@ IntersectionInfo Raycast(const Ray& ray, const Scene &scene)
 glm::vec3 RayTrace(const Ray& ray, const Scene& scene, const Camera& camera, int maxDepth = 1)
 {
     //#7
-    glm::vec3 bgColor(0.0f);
+    glm::vec3 finalColor(0.0f);
 
     IntersectionInfo object = Raycast(ray, scene);
 
@@ -355,20 +355,43 @@ glm::vec3 RayTrace(const Ray& ray, const Scene& scene, const Camera& camera, int
         //#13 & 14
         //glm::vec3 finalColor = ((scene.lights.ambient * scene.objects.ambient) + ((scene.lights.diffuse * scene.objects.diffuse) + (scene.lights.specular * scene.objects.specular));
 
-        glm::vec3 otherCompSum; //sum of diffuse and specular components
-        glm::vec3 ambientSum; //sum of ambient components
+        glm::vec3 otherCompSum(0.0f); //sum of diffuse and specular components
+        glm::vec3 ambientSum(0.0f); //sum of ambient components
         for (int i = 0; i < scene.lights.size(); i++)
         {
             ambientSum += scene.lights[i]->ambient;
-            //n = intersection normal; l = ray origin - intersection point
+
+            vec3 n = object.intersectionNormal;
+
+            vec3 position = vec3(scene.lights[i]->position.x, scene.lights[i]->position.y, scene.lights[i]->position.z);
+            vec3 l;
+
+            if (scene.lights[i]->position.w > 0)
+            {
+                l = normalize(position - object.intersectionPoint);
+            }
+            else
+            {
+                l = scene.lights[i]->position;
+            }
+                        
+            vec3 diffuseComponent = max(dot(n, l), 0.0f) * object.obj->material.diffuse * scene.lights[i]->diffuse;
+
+            vec3 r = reflect(-l, n);
+            vec3 v = camera.position - object.intersectionPoint;
+
+            vec3 specularComponent = max(dot(r, v), 0.0f) * object.obj->material.specular * scene.lights[i]->specular;
+
+            float d = length(position - object.intersectionPoint);
+            float attenuation = (scene.lights[i]->quadratic * d * d) + (scene.lights[i]->linear * d) + scene.lights[i]->constant;
+
+            otherCompSum += (diffuseComponent + specularComponent) * attenuation;
         }
 
-        return bgColor;
+        finalColor = (ambientSum / (float)(scene.lights.size())) + otherCompSum;
     }
-    else
-    {
-        return bgColor;
-    }
+
+    return finalColor;
 }
 
 //#8 run app
