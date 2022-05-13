@@ -408,12 +408,11 @@ glm::vec3 RayTrace(const Ray& ray, const Scene& scene, const Camera& camera, int
             {
                 while (maxDepth > 1)
                 {
+                    float k = material.shininess/128; //Reflectivity
                     Ray NewRay;
                     IntersectionInfo object = Raycast(NewRay, scene);
                     glm::vec3 NewColor = RayTrace(NewRay, scene, camera, maxDepth);
-
-                    //halp on what to do with this
-                    float k = material.shininess/128; //Reflectivity
+                    NewColor = NewColor * k;
                     finalColor += NewColor;
                     maxDepth--;
                 }
