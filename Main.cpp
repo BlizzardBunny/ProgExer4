@@ -348,7 +348,6 @@ glm::vec3 RayTrace(const Ray& ray, const Scene& scene, const Camera& camera, int
     glm::vec3 finalColor(0.0f);
 
     IntersectionInfo object = Raycast(ray, scene);
-
     
     if (object.obj != nullptr)
     {
@@ -357,8 +356,6 @@ glm::vec3 RayTrace(const Ray& ray, const Scene& scene, const Camera& camera, int
         glm::vec3 ambientSum(0.0f); //sum of ambient components
         for (int i = 0; i < scene.lights.size(); i++)
         {
-            ambientSum += scene.lights[i]->ambient;
-
             vec3 n = object.intersectionNormal;
 
             vec3 position = vec3(scene.lights[i]->position.x, scene.lights[i]->position.y, scene.lights[i]->position.z);
@@ -375,7 +372,7 @@ glm::vec3 RayTrace(const Ray& ray, const Scene& scene, const Camera& camera, int
                         
             vec3 diffuseComponent = max(dot(n, l), 0.0f) * object.obj->material.diffuse * scene.lights[i]->diffuse;
 
-            vec3 r = reflect(-l, n);
+            vec3 r = reflect(l, n);
             vec3 v = camera.position - object.intersectionPoint;
 
             vec3 specularComponent = max(dot(r, v), 0.0f) * object.obj->material.specular * scene.lights[i]->specular;
@@ -385,41 +382,40 @@ glm::vec3 RayTrace(const Ray& ray, const Scene& scene, const Camera& camera, int
 
             otherCompSum += (diffuseComponent + specularComponent) * attenuation;
 
+
             //#15
             vec3 s = scene.lights[i]->position;
             float ObjectDistance = sqrt((pow(object.intersectionPoint.x - camera.position.x, 2)) + (pow(object.intersectionPoint.y - camera.position.y, 2)) + (pow(object.intersectionPoint.z - camera.position.z, 2)));
             float LightDistance = sqrt((pow(s.x - camera.position.x, 2)) + (pow(s.y - camera.position.y, 2)) + (pow(s.z - camera.position.z, 2)));
 
-            if ((object.obj = nullptr) && (ObjectDistance < LightDistance))
+            if ((object.obj == nullptr) && (ObjectDistance < LightDistance))
             {
-                glm::vec3 ambientSum(0.0f);
                 glm::vec3 bias(0.001f); //value of bias used for shadow acne
                 for (int i = 0; i < scene.lights.size(); i++)
                 {
                     vec3 n = object.intersectionNormal;
                     object.intersectionPoint += n * bias;
                     ambientSum += scene.lights[i]->ambient;
-                    finalColor = ambientSum;
-                }
-            }
-
-            //#16
-            if (maxDepth > 1)
-            {
-                while (maxDepth > 1)
-                {
-                    float k = material.shininess/128; //Reflectivity
-                    Ray NewRay;
-                    IntersectionInfo object = Raycast(NewRay, scene);
-                    glm::vec3 NewColor = RayTrace(NewRay, scene, camera, maxDepth);
-                    NewColor = NewColor * k;
-                    finalColor += NewColor;
-                    maxDepth--;
                 }
             }
         }
 
-        finalColor = (ambientSum / (float)(scene.lights.size())) + otherCompSum;
+        finalColor = (object.obj->material.ambient * (ambientSum / (float)(scene.lights.size()))) + otherCompSum;
+
+        //#16
+        if (maxDepth > 1)
+        {
+            while (maxDepth > 1)
+            {
+                maxDepth--;
+                float k = object.obj->material.shininess / 128; //Reflectivity
+                Ray NewRay;
+                IntersectionInfo object = Raycast(NewRay, scene);
+                glm::vec3 NewColor = RayTrace(NewRay, scene, camera, maxDepth);
+                NewColor = NewColor * k;
+                finalColor += NewColor;
+            }
+        }
     }
     return finalColor;
 }
